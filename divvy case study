@@ -1,0 +1,364 @@
+install.packages("ggplot2")
+install.packages("tidyverse")
+install.packages("lubridate")
+getwd()
+setwd("C:/Users/default.ASUS/OneDrive/Desktop")
+library(tidyverse)
+library(lubridate)
+library(ggplot2)
+
+#Upload divvy dataset 
+
+dec_2022 <- read.csv("C:/Users/default.ASUS/Downloads/divvy-tripdata/2023 divvy trip data/202212-divvy-tripdata.csv")
+jan_2023 <- read.csv("C:/Users/default.ASUS/Downloads/divvy-tripdata/2023 divvy trip data/202301-divvy-tripdata.csv")
+feb_2023 <- read.csv("C:/Users/default.ASUS/Downloads/divvy-tripdata/2023 divvy trip data/202302-divvy-tripdata.csv")
+mar_2023 <- read.csv("C:/Users/default.ASUS/Downloads/divvy-tripdata/2023 divvy trip data/202303-divvy-tripdata.csv")
+apr_2023 <- read.csv("C:/Users/default.ASUS/Downloads/divvy-tripdata/2023 divvy trip data/202304-divvy-tripdata.csv")
+may_2023 <- read.csv("C:/Users/default.ASUS/Downloads/divvy-tripdata/2023 divvy trip data/202305-divvy-tripdata.csv")
+jun_2023 <- read.csv("C:/Users/default.ASUS/Downloads/divvy-tripdata/2023 divvy trip data/202306-divvy-tripdata.csv")
+jul_2023 <- read.csv("C:/Users/default.ASUS/Downloads/divvy-tripdata/2023 divvy trip data/202307-divvy-tripdata.csv")
+aug_2023 <- read.csv("C:/Users/default.ASUS/Downloads/divvy-tripdata/2023 divvy trip data/202308-divvy-tripdata.csv")
+sep_2023 <- read.csv("C:/Users/default.ASUS/Downloads/divvy-tripdata/2023 divvy trip data/202309-divvy-tripdata.csv")
+oct_2023 <- read.csv("C:/Users/default.ASUS/Downloads/divvy-tripdata/2023 divvy trip data/202310-divvy-tripdata.csv")
+nov_2023 <- read.csv("C:/Users/default.ASUS/Downloads/divvy-tripdata/2023 divvy trip data/202311-divvy-tripdata.csv")
+
+#Compare names of each columns
+colnames(dec_2022)
+colenames(jan_2023)
+colnames(jan_2023)
+colnames(feb_2023)
+colnames(mar_2023)
+colnames(apr_2023)
+colnames(may_2023)
+colnames(jun_2023)
+colnames(jul_2023)
+colnames(aug_2023)
+colnames(sep_2023)
+colnames(oct_2023)
+colnames(nov_2023)
+
+#Inspect the dataframe and look for incongruencies
+str(dec_2022)
+str(jan_2023)
+str(feb_2023)
+str(mar_2023)
+str(apr_2023)
+str(may_2023)
+str(jun_2023)
+str(jul_2023)
+str(aug_2023)
+str(sep_2023)
+str(oct_2023)
+str(nov_2023)
+
+# Stack individual quarter's data frames into one big data frame
+divvy2023 <- bind.rows(dec_2022,jan_2023,feb_2023,mar_2023,apr_2023,may_2023,jun_2023,jul_2023,aug_2023,sep_2023,oct_2023,nov_2023)
+
+# Remove start_lat, start_lng, end_lat and end_lng fields as this data was dropped beginning in 2020
+divvy2023 <- divvy2023 %>%
+select(-c(start_lat, start_lng, end_lat, end_lng))
+
+# Inspect the new table that has been created
+colnames(divvy2023)
+nrow(divvy2023)
+dim(divvy2023)
+head(divvy2023)
+str(divvy2023)
+summary(divvy2023)
+# There are some rides where tripduration shows up as negative, including several hundred rides where Divvy took bikes out of circulation for Quality Control reasons and to delete these rides.
+
+# Add columns that list the date, month, day, and year of each ride
+# Aggregate ride data for each month, day, or year ... before completing these operations we could only aggregate at the ride level
+divvy2023$date <- as.Date(divvy2023$started_at)
+divvy2023$month <- format(as.Date(divvy2023$date), "%m")
+divvy2023$day <- format(as.Date(divvy2023$date), "%d")
+divvy2023$year <- format(as.Date(divvy2023$date), "%Y")
+divvy2023$day_of_week <- format(as.Date(divvy2023$date), "%A")
+
+# Add a "ride_length" calculation to all_trips (in seconds)
+divvy2023$ride_length <- difftime(divvy2023$ended_at,divvy2023$started_at)
+
+# Inspect the structure of the columns
+str(all_trips)
+
+# Convert "ride_length" from Factor to numeric so we can run calculations on the data
+is.factor(divvy2023$ride_length)
+divvy2023$ride_length <- as.numeric(as.character(divvy2023$ride_length))
+is.numeric(divvy2023$ride_length)
+
+# Remove "bad" data
+# The dataframe includes a few hundred entries when bikes were taken out of docks and checked for quality by Divvy or ride_length was negative
+# We will create a new version of the dataframe (v2) since data is being removed
+
+divvy2023_v2 <- divvy2023[!(divvy2023$start_station_name == "HQ QR" | divvy2023$ride_length<0),]
+
+# Descriptive analysis on ride_length (all figures in seconds)
+mean(divvy2023_v2$ride_length) #straight average (total ride length / rides)
+median(divvy2023_v2$ride_length) #midpoint number in the ascending array of ride lengths
+max(divvy2023_v2$ride_length) #longest ride
+min(divvy2023_v2$ride_length) #shortest ride
+
+ mean(divvy2023_v2$ride_length) 
+[1] 1093.471
+> median(divvy2023_v2$ride_length)
+[1] 572
+> max(divvy2023_v2$ride_length) 
+[1] 5909344
+> min(divvy2023_v2$ride_length) 
+[1] 0
+
+summary(divvy2023_v2)
+   ride_id          rideable_type       started_at          ended_at         start_station_name
+ Length:5677348     Length:5677348     Length:5677348     Length:5677348     Length:5677348    
+ Class :character   Class :character   Class :character   Class :character   Class :character  
+ Mode  :character   Mode  :character   Mode  :character   Mode  :character   Mode  :character  
+                                                                                               
+                                                                                               
+                                                                                               
+ start_station_id   end_station_name   end_station_id     member_casual           date           
+ Length:5677348     Length:5677348     Length:5677348     Length:5677348     Min.   :2022-12-01  
+ Class :character   Class :character   Class :character   Class :character   1st Qu.:2023-05-10  
+ Mode  :character   Mode  :character   Mode  :character   Mode  :character   Median :2023-07-13  
+                                                                             Mean   :2023-07-02  
+                                                                             3rd Qu.:2023-09-07  
+                                                                             Max.   :2023-11-30  
+    month               day                year           day_of_week         ride_length     
+ Length:5677348     Length:5677348     Length:5677348     Length:5677348     Min.   :      0  
+ Class :character   Class :character   Class :character   Class :character   1st Qu.:    325  
+ Mode  :character   Mode  :character   Mode  :character   Mode  :character   Median :    572  
+                                                                             Mean   :   1093  
+                                                                             3rd Qu.:   1016  
+                                                                             Max.   :5909344
+
+# Compare members and casual users
+> aggregate(divvy2023_v2$ride_length ~ divvy2023_v2$member_casual, FUN = mean)
+  divvy2023_v2$member_casual divvy2023_v2$ride_length
+1                     casual                1699.6293
+2                     member                 750.3075
+> aggregate(divvy2023_v2$ride_length ~ divvy2023_v2$member_casual, FUN = median)
+  divvy2023_v2$member_casual divvy2023_v2$ride_length
+1                     casual                      711
+2                     member                      511
+> aggregate(divvy2023_v2$ride_length ~ divvy2023_v2$member_casual, FUN = max)
+  divvy2023_v2$member_casual divvy2023_v2$ride_length
+1                     casual                  5909344
+2                     member                    93580
+> aggregate(divvy2023_v2$ride_length ~ divvy2023_v2$member_casual, FUN = min)
+  divvy2023_v2$member_casual divvy2023_v2$ride_length
+1                     casual                        0
+2                     member                        0
+
+# See the average ride time by each day for members vs casual users
+
+aggregate(divvy2023_v2$ride_length ~ divvy2023_v2$member_casual + divvy2023_v2$day_of_week, FUN = mean)
+   divvy2023_v2$member_casual divvy2023_v2$day_of_week divvy2023_v2$ride_length
+1                      casual                   Friday                1655.6933
+2                      member                   Friday                 748.4099
+3                      casual                   Monday                1662.3683
+4                      member                   Monday                 711.8670
+5                      casual                 Saturday                1932.3231
+6                      member                 Saturday                 837.0706
+7                      casual                   Sunday                1971.2017
+8                      member                   Sunday                 837.8305
+9                      casual                 Thursday                1487.6438
+10                     member                 Thursday                 718.0708
+11                     casual                  Tuesday                1502.2028
+12                     member                  Tuesday                 720.0697
+13                     casual                Wednesday                1469.1514
+14                     member                Wednesday                 716.7113
+
+#Fix the order of the days
+divvy2023_v2$day_of_week <- ordered(divvy2023_v2$day_of_week, levels=c("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"))
+
+# Now, let's run the average ride time by each day for members vs casual users
+aggregate(divvy2023_v2$ride_length ~ divvy2023_v2$member_casual + divvy2023_v2$day_of_week, FUN = mean)
+   divvy2023_v2$member_casual divvy2023_v2$day_of_week divvy2023_v2$ride_length
+1                      casual                   Sunday                1971.2017
+2                      member                   Sunday                 837.8305
+3                      casual                   Monday                1662.3683
+4                      member                   Monday                 711.8670
+5                      casual                  Tuesday                1502.2028
+6                      member                  Tuesday                 720.0697
+7                      casual                Wednesday                1469.1514
+8                      member                Wednesday                 716.7113
+9                      casual                 Thursday                1487.6438
+10                     member                 Thursday                 718.0708
+11                     casual                   Friday                1655.6933
+12                     member                   Friday                 748.4099
+13                     casual                 Saturday                1932.3231
+14                     member                 Saturday                 837.0706
+
+# analyze ridership data by type and month
+aggregate(divvy2023_v2$ride_length ~ divvy2023_v2$member_casual + divvy2023_v2$month, FUN = mean)
+   divvy2023_v2$member_casual divvy2023_v2$month divvy2023_v2$ride_length
+1                      casual                 01                1374.8904
+2                      member                 01                 621.7059
+3                      casual                 02                1391.5510
+4                      member                 02                 642.8619
+5                      casual                 03                1284.7365
+6                      member                 03                 626.5333
+7                      casual                 04                1660.3767
+8                      member                 04                 701.6340
+9                      casual                 05                1711.2119
+10                     member                 05                 782.4131
+11                     casual                 06                1764.4163
+12                     member                 06                 792.0162
+13                     casual                 07                1940.0704
+14                     member                 07                 821.4992
+15                     casual                 08                2114.8298
+16                     member                 08                 826.3609
+17                     casual                 09                1511.2266
+18                     member                 09                 788.7250
+19                     casual                 10                1372.3235
+20                     member                 10                 729.0645
+21                     casual                 11                1194.0211
+22                     member                 11                 694.4065
+23                     casual                 12                1337.3739
+24                     member                 12                 637.1693
+
+# analyze type of bikes and month
+aggregate(divvy2023_v2$ride_length ~ divvy2023_v2$rideable_type + divvy2023_v2$month, FUN = mean)
+   divvy2023_v2$rideable_type divvy2023_v2$month divvy2023_v2$ride_length
+1                classic_bike                 01                 774.9230
+2                 docked_bike                 01               12726.1979
+3               electric_bike                 01                 573.4832
+4                classic_bike                 02                 836.6943
+5                 docked_bike                 02                9049.6806
+6               electric_bike                 02                 605.5447
+7                classic_bike                 03                 858.0571
+8                 docked_bike                 03                7942.6172
+9               electric_bike                 03                 586.5135
+10               classic_bike                 04                1112.5572
+11                docked_bike                 04                8622.4638
+12              electric_bike                 04                 705.9338
+13               classic_bike                 05                1237.4666
+14                docked_bike                 05                8122.5832
+15              electric_bike                 05                 778.0392
+16               classic_bike                 06                1249.3958
+17                docked_bike                 06               10296.8869
+18              electric_bike                 06                 810.3678
+19               classic_bike                 07                1309.1541
+20                docked_bike                 07               11185.1511
+21              electric_bike                 07                 829.5016
+22               classic_bike                 08                1266.0364
+23                docked_bike                 08               15636.9176
+24              electric_bike                 08                 798.4018
+25               classic_bike                 09                1338.7046
+26              electric_bike                 09                 782.3341
+27               classic_bike                 10                1193.9595
+28              electric_bike                 10                 688.6223
+29               classic_bike                 11                1049.5198
+30              electric_bike                 11                 622.4661
+31               classic_bike                 12                 817.3919
+32                docked_bike                 12               12371.9699
+33              electric_bike                 12                 596.1123
+> divvy2023_v2 %>% 
++   mutate(weekday = wday(started_at, label = TRUE)) %>%  
++   group_by(member_casual, weekday) %>%  
++   summarise(number_of_rides = n()							 
++             ,average_duration = mean(ride_length)) %>% 		
++   arrange(member_casual, weekday)
+`summarise()` has grouped output by 'member_casual'. You can override using the `.groups` argument.
+# A tibble: 14 × 4
+# Groups:   member_casual [2]
+   member_casual weekday number_of_rides average_duration
+   <chr>         <ord>             <int>            <dbl>
+ 1 casual        Sun              333535            1971.
+ 2 casual        Mon              234709            1662.
+ 3 casual        Tue              246809            1502.
+ 4 casual        Wed              247852            1469.
+ 5 casual        Thu              271135            1488.
+ 6 casual        Fri              309552            1656.
+ 7 casual        Sat              408669            1932.
+ 8 member        Sun              402577             838.
+ 9 member        Mon              491851             712.
+10 member        Tue              575387             720.
+11 member        Wed              578821             717.
+12 member        Thu              588128             718.
+13 member        Fri              521922             748.
+14 member        Sat              466401             837.
+> divvy2023_v2 %>% 
++   mutate(weekday = wday(started_at, label = TRUE)) %>% 
++   group_by(member_casual, weekday) %>% 
++   summarise(number_of_rides = n()
++             ,average_duration = mean(ride_length)) %>% 
++   arrange(member_casual, weekday)  %>% 
++   ggplot(aes(x = weekday, y = number_of_rides, fill = member_casual)) +
++   geom_col(position = "dodge")
+`summarise()` has grouped output by 'member_casual'. You can override using the `.groups` argument.
+> divvy2023_v2 %>% 
++   mutate(weekday = wday(started_at, label = TRUE)) %>% 
++   group_by(member_casual, weekday) %>% 
++   summarise(number_of_rides = n()
++             ,average_duration = mean(ride_length)) %>% 
++   arrange(member_casual, weekday)  %>% 
++   ggplot(aes(x = weekday, y = average_duration, fill = member_casual)) +
++   geom_col(position = "dodge")
+`summarise()` has grouped output by 'member_casual'. You can override using the `.groups` argument.
+> divvy2023_v2 %>%
++   mutate(month = month(started_at, label = TRUE)) %>%
++   group_by(member_casual, month) %>%
++   summarise(number_of_rides = n())
+`summarise()` has grouped output by 'member_casual'. You can override using the `.groups` argument.
+# A tibble: 24 × 3
+# Groups:   member_casual [2]
+   member_casual month number_of_rides
+   <chr>         <ord>           <int>
+ 1 casual        Jan             40008
+ 2 casual        Feb             43016
+ 3 casual        Mar             62201
+ 4 casual        Apr            147284
+ 5 casual        May            234178
+ 6 casual        Jun            301226
+ 7 casual        Jul            331344
+ 8 casual        Aug            311095
+ 9 casual        Sep            261603
+10 casual        Oct            177055
+# ℹ 14 more rows
+# ℹ Use `print(n = ...)` to see more rows
+
+# Let's visualize the number of rides by rider type
+divvy2023_v2 %>%
++   mutate(month = month(started_at, label = TRUE)) %>%
++   group_by(member_casual, month) %>%
++   summarise(number_of_rides = n()
++           ,average_duration = mean(ride_length)) %>%
++   arrange(member_casual, month) %>%
++   ggplot(aes(x = month, y = number_of_rides, fill = member_casual)) +
++   geom_col(position = "dodge")
+`summarise()` has grouped output by 'member_casual'. You can override using the `.groups` argument.
+
+# Let's create a visualization for average duration
+divvy2023_v2 %>% 
+  mutate(weekday = wday(started_at, label = TRUE)) %>% 
+  group_by(member_casual, weekday) %>% 
+  summarise(number_of_rides = n()
+            ,average_duration = mean(ride_length)) %>% 
+  arrange(member_casual, weekday)  %>% 
+  ggplot(aes(x = weekday, y = average_duration, fill = member_casual)) +
+  geom_col(position = "dodge")
+
+# Let's create a visualization for number of rides by month
+divvy2023_v2 %>% 
++   mutate(month = month(started_at, label = TRUE)) %>% 
++   group_by(member_casual, month) %>% 
++   summarise(number_of_rides = n()
++             ,average_duration = mean(ride_length)) %>% 
++   arrange(member_casual, month)  %>% 
++   ggplot(aes(x = month, y = average_duration, fill = member_casual)) +
++   geom_col(position = "dodge")
+
+# Let's create a visualization for average duration by month 
+divvy2023_v2 %>% 
+  mutate(month = month(started_at, label = TRUE)) %>% 
+  group_by(member_casual, month) %>% 
+  summarise(number_of_rides = n()
+            ,average_duration = mean(ride_length)) %>% 
+  arrange(member_casual, month)  %>% 
+  ggplot(aes(x = month, y = average_duration, fill = member_casual)) +
+  geom_col(position = "dodge")
+
+# Type of bikes 
+divvy2023_v2 %>% 
+  ggplot(aes(x = rideable_type, fill = member_casual)) +
+  geom_bar(position = "dodge")
