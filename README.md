@@ -37,6 +37,7 @@ Make sure you have the following R packages installed:
 - `tidyverse`
 - `ggplot2`
 - `dplyr`
+- 'lubridate'
 
 ## Data Source
 
